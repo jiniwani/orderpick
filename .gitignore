@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+public/
+node_modules/
+
+.vercel/
+admin-login-preview.png
+home-preview.png

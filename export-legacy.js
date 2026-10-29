@@ -1,0 +1,2 @@
+/* 원본 파일을 열고 개발자 도구 Console에서 이 파일 내용을 실행합니다. */
+(()=>{const raw=localStorage.getItem('orderpick_v1');if(!raw)throw Error('이 주소의 브라우저 저장소에 기존 데이터가 없습니다. 원본을 사용했던 브라우저와 파일을 확인하세요.');JSON.parse(raw);const u=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download='orderpick-legacy-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)})();

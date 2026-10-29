@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node tests/local.cjs && node tests/sync.cjs && node tests/build.cjs"
+  }
+}
