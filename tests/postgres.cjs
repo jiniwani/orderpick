@@ -9,9 +9,17 @@ await db.exec("select set_config('request.jwt.claim.sub','00000000-0000-4000-800
 const old=(await db.query("select public.load_state('2098-12-31') as state")).rows[0].state;old.data.orders={'legacy:legacy_person':{on:true,menuId:'legacy_menu',temp:'ICE',size:'기본',strength:'기본',note:''}};old.data.receiptText='Legacy receipt';await db.query("select public.save_state('2098-12-31',$1,$2::jsonb,'complete')",[old.revision,JSON.stringify(old.data)]);
 await db.exec(fs.readFileSync('supabase/migrations/005_account_isolation.sql','utf8'));
 await db.exec(fs.readFileSync('supabase/migrations/006_account_state_grants.sql','utf8'));
+// Minimal Storage metadata model. Real Storage upload/size enforcement is separate.
+await db.exec(`create schema storage;grant usage on schema storage to anon,authenticated;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(bucket_id text references storage.buckets(id),name text,metadata jsonb,created_at timestamptz default now(),primary key(bucket_id,name));alter table storage.objects enable row level security;grant select,insert,update,delete on storage.objects to anon,authenticated;`);
+await db.exec('create schema supabase_migrations;create table supabase_migrations.schema_migrations(version text primary key,name text);');
+require('../supabase/apply-007-with-backup.cjs');
+await db.exec(fs.readFileSync('.recovery/007-apply-with-backup.sql','utf8'));
+assert.equal((await db.query('select count(*)::int n from orderpick_backup_007.attendees')).rows[0].n,1);
+assert.equal((await db.query("select version from supabase_migrations.schema_migrations where version='007'")).rows.length,1);
 const preserved=(await db.query("select public.load_state('2098-12-31') as state")).rows[0].state;assert.equal(preserved.status,'completed');assert.equal(preserved.data.history[0].total,4500);assert.equal(preserved.data.cafes[0].name,'Legacy preserved');
 let q=await db.query(`select account_id::text from public.cafes where id='legacy'`);assert.equal(q.rows[0].account_id,'00000000-0000-4000-8000-000000000001');
 await db.exec(fs.readFileSync('tests/database-account-isolation.sql','utf8'));
+await db.exec(fs.readFileSync('tests/database-photos.sql','utf8'));
 q=await db.query('select count(*)::int as n from auth.users');assert.equal(q.rows[0].n,1,'Fixtures must rollback');
-console.log('PASS: PostgreSQL local migration 001–006; legacy data preservation; transactional A/B isolation, spoof/FK defense, RLS/API roles, versions, completion, resets, guest denial; fixtures rolled back');
+console.log('PASS: PostgreSQL local migration 001–007; legacy preservation; A/B isolation, RLS, revisions, completion, resets, guest denial; private photo ownership, limits, no overwrite, reference guard and orphan cleanup; fixtures rolled back');
 }finally{await db.close()}})().catch(e=>{console.error(e.message,e.position,e.query?.slice(Math.max(0,Number(e.position)-80),Number(e.position)+100));process.exitCode=1});
