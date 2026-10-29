@@ -39,3 +39,15 @@ personChange('mb');
 vm.runInContext(`if(data.people[0].favorites['a:p']!=='ma'||data.people[0].favorites['b:p']!=='mb'||data.people[0].preferredCafeId!=='a'||ensure(data.people[0]).menuId!=='ma')throw Error('카페별 선호도 또는 오늘 주문 손상');`,sandbox);
 personChange('ma');vm.runInContext(`if(data.people[0].favorites['b:p']!=='mb')throw Error('다른 카페 메뉴 허용');data.cafes=data.cafes.filter(c=>c.id!=='b');render();if(!$('preferenceCafeCard').hidden||preferenceCafeId!=='a')throw Error('단일 카페 설정 간소화');`,sandbox);
 console.log('PASS: 참석자별 선호 카페 제거, 기존 메뉴 표시, 관리 카페와 오늘 주문 독립, 카페별 선호도 보존, 잘못된 메뉴 거부, 단일 카페 선택 생략');
+vm.runInContext(`
+if(parsePrice('미정')!==null||parsePrice('')!==null||parsePrice(null)!==null||parsePrice('0')!==0||parsePrice('3,500')!==3500)throw Error('가격 입력 처리');
+for(const input of ['-1','abc','Infinity','10000001'])if(!Number.isNaN(parsePrice(input)))throw Error('잘못된 가격 허용');
+data.cafes=[{id:'unknown_c',name:'기본',menu:[{id:'known_m',name:'확정 음료',price:1000}]}];data.cafeId='unknown_c';data.people=[{id:'unknown_p',name:'A',favorites:{}},{id:'known_p',name:'B',favorites:{}}];data.orders={};
+$('newDrink').value='미정 음료';$('newPrice').value='미정';$('addDrink').onclick();var unknownId=cafe().menu[1].id;
+if(cafe().menu[1].price!==null)throw Error('미정 등록 실패');ensure(data.people[0]).on=true;ensure(data.people[0]).menuId=unknownId;ensure(data.people[1]).on=true;render();
+if($('heroPrice').textContent!=='미정'||$('summaryTotal').textContent!=='미정'||!$('summaryPriceNote').textContent.includes('1,000원')||$('summaryPriceNote').hidden)throw Error('미정 합계 표시');
+if(!textOrder().includes('총 예상금액 미정')||!textOrder().includes('가격 미정 1잔')||!textOrder().includes('(가격 미정)'))throw Error('복사 주문서 미정 누락');
+if(JSON.parse(JSON.stringify(data)).cafes[0].menu[1].price!==null)throw Error('백업 미정 보존');
+if(!receiptAmount({total:null,knownTotal:1000,unknownCount:1}).includes('미정'))throw Error('기록 표시');
+cafe().menu[1].price=0;render();if($('heroPrice').textContent!=='1,000원'||!$('summaryPriceNote').hidden||money(0)!=='0원')throw Error('0원과 미정 혼동');
+`,sandbox);console.log('PASS: 미정/0원 구분, 미정 메뉴 등록, 혼합 주문 합계·복사·기록 표시, 가격 유효성, JSON 보존');

@@ -1,0 +1,24 @@
+begin;
+insert into auth.users values('00000000-0000-4000-8000-0000000000a8','unknown-price@example.invalid');
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-0000000000a8',true);
+set local role authenticated;
+do $$declare s jsonb;r jsonb;b jsonb:='{"cafes":[{"id":"price_c8","name":"기본","menu":[{"id":"price_m8","name":"미정 음료","price":null},{"id":"price_known8","name":"확정 음료","price":1000},{"id":"price_zero8","name":"0원 음료","price":0}]}],"people":[{"id":"price_p8","name":"A","favorites":{}},{"id":"price_p82","name":"B","favorites":{}}],"cafeId":"price_c8","orders":{"price_c8:price_p8":{"on":true,"menuId":"price_m8","temp":"ICE","size":"기본","strength":"기본","note":""},"price_c8:price_p82":{"on":true,"menuId":"price_known8","temp":"HOT","size":"기본","strength":"기본","note":""}},"receiptText":"총 예상금액 미정"}';begin
+ s:=public.save_state('2099-08-01',0,b,'complete');r:=s->'data'->'history'->0;
+ if r->'total'<>'null'::jsonb or (r->>'unknownCount')::int<>1 or (r->>'knownTotal')::int<>1000 then raise exception 'UNKNOWN_TREATED_AS_ZERO';end if;
+ if not exists(select 1 from public.order_items where account_id=auth.uid() and price is null) then raise exception 'UNKNOWN_ITEM_NOT_PRESERVED';end if;
+ if not exists(select 1 from public.menus where account_id=auth.uid() and id='price_zero8' and price=0) then raise exception 'ZERO_CHANGED';end if;
+ begin perform public.save_state('2099-08-01',1,b);raise exception 'COMPLETED_EDIT';exception when others then if sqlerrm<>'ORDER_COMPLETED' then raise;end if;end;
+ if public.load_state('2099-08-02')->'data'->'history'->0->'total'<>'null'::jsonb then raise exception 'HISTORY_UNKNOWN_LOST';end if;
+ perform public.save_state('2099-08-01',1,b,'reopen');
+ b:=jsonb_set(b,'{cafes,0,menu,0,price}','2000');s:=public.save_state('2099-08-01',2,b,'complete');r:=s->'data'->'history'->0;
+ if (r->>'total')::int<>3000 or (r->>'unknownCount')::int<>0 then raise exception 'PRICE_RESOLUTION';end if;
+ b:=jsonb_set(b,'{orders,price_c8:price_p82,on}','false');b:=jsonb_set(b,'{cafes,0,menu,0,price}','null');
+ s:=public.save_state('2099-08-02',3,b,'complete');r:=s->'data'->'history'->0;
+ if r->'total'<>'null'::jsonb or (r->>'knownTotal')::int<>0 or (r->>'unknownCount')::int<>1 then raise exception 'ALL_UNKNOWN';end if;
+ b:=jsonb_set(b,'{orders,price_c8:price_p8,menuId}','"price_zero8"');s:=public.save_state('2099-08-03',4,b,'complete');r:=s->'data'->'history'->0;
+ if (r->>'total')::int<>0 or (r->>'unknownCount')::int<>0 then raise exception 'FREE_ORDER';end if;
+ b:=jsonb_set(b,'{cafes,0,menu,0,price}','-1');
+ begin perform public.save_state('2099-08-04',5,b);raise exception 'NEGATIVE_PRICE';exception when check_violation then null;end;
+end $$;
+reset role;
+rollback;
