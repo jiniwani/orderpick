@@ -111,3 +111,6 @@ SQL Editor에서 직접 001~004 적용 후에는 `supabase/record-applied-migrat
 로컬 `.env.local`에 URL·publishable key를 넣으면 `node serve.cjs`가 이를 읽습니다. 해당 파일은 Git에서 제외됩니다. Node.js 24에서 검증했습니다. 실제 연결 읽기 점검은 `node tests/live-read.cjs`로 수행할 수 있으며 데이터를 변경하지 않습니다.
 
 004는 PostgREST API 세션의 safe-update 보호가 활성화된 환경에서도 저장되도록 모든 DELETE에 명시적인 WHERE 조건을 추가합니다. 보호 설정은 끄지 않습니다.
+## 커피 배너
+
+첨부 레퍼런스를 바탕으로 커피 사진과 새싹 로고를 적용했습니다. 문구와 집계 숫자는 HTML이며 모바일에서는 사진 위치·크기를 조정합니다. 이미지 파일은 `assets/coffee-banner.jpg`이고, 내장 image_gen으로 제작한 최종 프롬프트는 `assets/README.md`에 보관했습니다. 빌드 시에는 JPEG만 공개 디렉터리로 복사합니다.

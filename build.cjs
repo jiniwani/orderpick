@@ -13,3 +13,6 @@ if (url) {
 fs.mkdirSync('public', { recursive: true });
 for (const file of ['index.html', 'app.js']) fs.copyFileSync(file, 'public/' + file);
 fs.writeFileSync('public/config.js', 'window.ORDERPICK_CONFIG=' + JSON.stringify(url ? { url, key } : {}) + ';');
+
+fs.mkdirSync('public/assets', { recursive: true });
+fs.copyFileSync('assets/coffee-banner.jpg', 'public/assets/coffee-banner.jpg');
