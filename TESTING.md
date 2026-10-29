@@ -91,3 +91,8 @@
 - 360px에서 본문 345px, 320px에서 본문 305px·가로 넘침 없음. 320px 설정 선호 메뉴 선택 폭 235px, 주문 선택 폭 113.5px로 기존 2열 유지. 사진은 이름 행에만 배치. 스크린샷: `.recovery/photo-settings-320.png`, `.recovery/photo-order-320.png` (테스트 이미지).
 - 브라우저 삭제 확인창 호출 후 자동화 CDP 응답이 멈춰 UI 삭제 완료는 검증하지 못함. SQL의 연결 해제/삭제 권한 검증은 통과. 실제 Supabase Auth/PostgREST/Storage 업로드·다운로드·삭제와 실기기 HEIC는 미검증.
 - Git push·배포·운영 SQL·운영 Storage 변경 없음. 운영 적용 전 007 마이그레이션과 실제 계정 간 사진 검증이 필요함.
+## 사진 기능 운영 DB 적용 (2026-10-29)
+
+- 사용자 배포 요청 후 007 적용 성공. orderpick_backup_007에 8개 기존 테이블과 save_state 함수 백업, 스키마·테이블 접근 회수 및 RLS 적용. 트랜잭션 안 자료 건수 비교 통과.
+- 운영 SQL 재조회: attendee-photos public=false, file_size_limit=102400, allowed_mime_types=[image/jpeg], 007 이력/비공개 백업 존재, anon 사진 조회 RPC 실행=false, authenticated 내부 save_catalog_state 직접 실행=false.
+- 터미널의 외부 HTTP 검증은 네트워크 연결 실패로 미실행. 운영 사진 업로드·삭제는 실제 계정에서 별도 확인 필요.
