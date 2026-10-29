@@ -33,7 +33,7 @@
 
 ## Supabase 설정
 
-1. 새 전용 Supabase 프로젝트를 생성합니다. SQL Editor에서 `supabase/migrations/001_orderpick.sql`, `supabase/migrations/002_guest_access_admin_login.sql`, `supabase/migrations/003_fix_save_alias.sql` 순서로 실행합니다. 이미 적용한 파일은 건너뛰고 새 마이그레이션만 실행합니다. 기존 다른 서비스 DB에 적용하지 마세요. 중복 실행용 마이그레이션은 아닙니다.
+1. 새 전용 Supabase 프로젝트를 생성합니다. SQL Editor에서 `supabase/migrations/001_orderpick.sql`, `supabase/migrations/002_guest_access_admin_login.sql`, `supabase/migrations/003_fix_save_alias.sql`, `supabase/migrations/004_safe_delete_predicates.sql` 순서로 실행합니다. 이미 적용한 파일은 건너뛰고 새 마이그레이션만 실행합니다. 기존 다른 서비스 DB에 적용하지 마세요. 중복 실행용 마이그레이션은 아닙니다.
 2. Authentication 설정에서 공개 신규 가입(Allow new users to sign up)을 끄고 이메일/비밀번호 로그인을 사용합니다. 프런트엔드에는 가입 기능이 없습니다.
 3. Authentication → Users에서 관리자 계정만 생성합니다. 일반 사용자 계정은 만들 필요가 없습니다. 초기 비밀번호는 안전한 경로로 당사자에게 전달합니다. 이 앱에는 비밀번호 설정·재설정 화면이 없으므로 계정 관리는 Supabase 대시보드에서 수행합니다.
 4. 사용자 UUID를 확인하고 SQL Editor에서 승인합니다. 아래 UUID를 실제 사용자 UUID로 바꿉니다.
@@ -63,7 +63,7 @@ SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 URL과 publishable key는 빌드한 config.js에 포함되며 브라우저에서 보입니다. 기존 anon JWT 키도 role=anon일 때만 허용합니다. service_role, sb_secret 키는 사용하지 않으며 빌드에서도 거부합니다. 데이터 보호는 공개키 은닉이 아닌 Auth·RLS·RPC 권한 검사로 처리합니다. 비밀키는 Vercel에도 이 앱용으로 등록할 필요가 없습니다. 비로그인 접근 정책에 따라 업무 데이터는 공개 접근이 허용되고, 전체 초기화만 Auth와 관리자 권한으로 보호합니다.
 
-Vercel에서 이 폴더를 Git 저장소로 연결하거나 Vercel CLI로 프로젝트를 배포합니다. 환경변수 변경 후에는 재배포해야 합니다. Supabase Authentication URL 설정에는 실제 배포 도메인을 등록합니다. 2026-10-29 OrderPick 전용 Supabase 프로젝트에 001~003을 적용하고 Vercel Production 환경변수를 등록했습니다. 관리자는 사용자가 만든 계정을 승인한 방식으로 설정합니다.
+Vercel에서 이 폴더를 Git 저장소로 연결하거나 Vercel CLI로 프로젝트를 배포합니다. 환경변수 변경 후에는 재배포해야 합니다. Supabase Authentication URL 설정에는 실제 배포 도메인을 등록합니다. 2026-10-29 OrderPick 전용 Supabase 프로젝트에 001~004을 적용하고 Vercel Production 환경변수를 등록했습니다. 관리자는 사용자가 만든 계정을 승인한 방식으로 설정합니다.
 
 로컬 연결 시험(PowerShell):
 
@@ -106,6 +106,8 @@ node build.cjs
 
 두 Supabase 환경변수가 모두 없으면 미연결 화면을 먼저 배포합니다. 이 상태에서는 주문 저장·관리자 로그인을 사용할 수 없습니다. 둘 중 하나만 설정되면 빌드는 실패합니다. 두 값을 설정한 뒤 재배포하면 공용 저장소에 연결됩니다.
 
-SQL Editor에서 직접 001~003 적용 후에는 `supabase/record-applied-migrations.sql`로 적용 이력을 기록합니다. 기존 이력이 있는 DB에는 이미 적용된 버전만 기록해야 합니다. 현재 프로젝트는 001~003 적용 이력을 기록했습니다.
+SQL Editor에서 직접 001~004 적용 후에는 `supabase/record-applied-migrations.sql`로 적용 이력을 기록합니다. 기존 이력이 있는 DB에는 이미 적용된 버전만 기록해야 합니다. 현재 프로젝트는 001~004 적용 이력을 기록했습니다.
 
 로컬 `.env.local`에 URL·publishable key를 넣으면 `node serve.cjs`가 이를 읽습니다. 해당 파일은 Git에서 제외됩니다. Node.js 24에서 검증했습니다. 실제 연결 읽기 점검은 `node tests/live-read.cjs`로 수행할 수 있으며 데이터를 변경하지 않습니다.
+
+004는 PostgREST API 세션의 safe-update 보호가 활성화된 환경에서도 저장되도록 모든 DELETE에 명시적인 WHERE 조건을 추가합니다. 보호 설정은 끄지 않습니다.
