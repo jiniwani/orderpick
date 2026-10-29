@@ -58,3 +58,8 @@
 
 - 실제 공개 HTTP API 읽기 검증 PASS: revision=0, 빈 카페·참석자 목록, 비로그인 profiles HTTP 401
 - 이 Windows 환경의 직접 Node HTTP 검증은 `node --use-system-ca tests/live-read.cjs`로 시스템 인증서를 사용했으며 TLS 검증 우회는 사용하지 않음
+- 배포 사이트 https://orderpick.vercel.app 및 localhost:4173에서 공용 데이터 불러오기 완료와 비로그인 입력 버튼 활성화 확인
+- Vercel Production 배포 93d3d92 Ready 확인, GitHub main 자동 배포 동작 확인
+- 승인된 관리자 JWT 식별자로 실제 DB 권한 검증 PASS: is_admin=true, 전체 초기화 허용 및 profiles 유지, 직접 자기 role 변경 거부 (변경 모두 ROLLBACK)
+- 관리자 비밀번호는 사용자가 직접 설정했으며 에이전트가 조회·저장하지 않음. 비밀번호를 사용하는 실제 로그인 제출은 사용자 확인 항목
+- 카페·메뉴·참석자·선호도는 빈 상태로 유지. 실제 업무 데이터로 두 기기 주문 입력·옵션 선택·복사·완료 시나리오는 운영 전 추가 확인 필요
