@@ -1,5 +1,7 @@
 # OrderPick 계정별 주문 관리
 
+운영 주소: [https://orderpick.pages.dev](https://orderpick.pages.dev). Cloudflare Pages 무료 정적 호스팅을 사용하며 기존 Vercel 주소는 보존했습니다.
+
 단일 HTML/CSS/JavaScript 앱입니다. **오늘 주문 · 주문서 · 설정** 3개 탭을 사용하며 설정 안에 참석자·선호 메뉴, 카페·메뉴, 데이터 관리가 있습니다. 상단 로그인 버튼으로 로그인 창을 엽니다. 씨젠 CI의 빨강을 참고한 앱용 색상을 적용했습니다. 공식 로고는 사용하지 않습니다.
 
 005·006 마이그레이션을 승인 후 운영 DB에 적용했습니다. 기존 자료 건수 보존 및 실제 PostgreSQL의 A/B 계정 격리 검사(롤백), 비로그인 HTTP API 거부를 확인했습니다. 프런트엔드 검증 범위와 배포 결과는 TESTING.md에 기록합니다.
@@ -8,7 +10,7 @@
 
 - 로그인한 승인 계정의 카페·메뉴·참석자·선호도·주문·기록만 조회/수정합니다. 같은 계정으로 로그인한 PC와 휴대폰은 같은 자료를 사용합니다.
 - 기존 공용 자료는 기존 승인 관리자 한 명의 계정으로 이전합니다. 새 계정은 빈 상태입니다. 관리자도 다른 계정 자료를 볼 수 없습니다.
-- 공개 회원가입은 끕니다. 관리자가 Supabase Authentication → Users → Create user에서 계정을 발급합니다. 005의 트리거가 승인된 일반 프로필과 계정별 저장 버전을 만듭니다. 비밀번호 입력·전달은 계정 소유자가 안전하게 처리합니다.
+- 공개 회원가입은 끕니다. 관리자가 Supabase Authentication → Users → Create user에서 Auto Confirm User를 켜고 계정을 직접 발급합니다. 005의 트리거가 승인된 일반 프로필과 계정별 저장 버전을 만듭니다. 비밀번호 입력·전달은 계정 소유자가 안전하게 처리합니다.
 - 일반 계정은 주문과 설정을 관리합니다. 전체 초기화는 관리자만 허용하며 **현재 계정 범위**에만 적용됩니다.
 - 프런트엔드는 publishable/anon 키만 사용합니다. service_role·sb_secret 키는 빌드에서 거부합니다.
 
@@ -76,7 +78,7 @@ SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 무료 한도는 모든 계정 합계입니다. Supabase Free의 DB 500MB·월 전송 5GB·월 활성 사용자 50,000명 범위를 확인해야 합니다. 비활성 프로젝트는 일시중지될 수 있습니다. 무기한·무제한 무료를 보장하지 않습니다. 설정 → 데이터 백업은 현재 작업 내용과 계정의 **전체 서버 기록 archive**를 포함합니다. 자동 삭제·과금 전환은 구현하지 않습니다. 직접 가입·메일 비밀번호 재설정은 별도 SMTP가 필요할 수 있으며 현재는 관리자 발급 방식입니다.
 
-Cloudflare Pages 정적 호스팅용 `_headers`를 제공합니다. 계정 연결이나 호스팅 이전은 아직 실행하지 않았습니다.
+Cloudflare Pages에 jiniwani/orderpick의 main을 연결해 자동 배포를 설정했습니다. 정적 보안 헤더는 `_headers`로 적용합니다. Production/Preview에 Supabase URL·publishable key를 등록했고 새 도메인의 HTTP 200·보안 헤더·이미지·공개 설정을 확인했습니다. Supabase Auth Site URL은 https://orderpick.pages.dev 입니다. 새 주소에서는 다시 로그인해야 하며 같은 계정의 기존 자료를 불러옵니다. 아래는 배포 재현 절차입니다.
 
 1. Cloudflare Pages에 GitHub 저장소를 연결합니다. Build command `npm run build`, output directory `public`, 프로젝트 루트 사용, Framework는 None입니다.
 2. 위 환경변수를 Production과 사용할 Preview 환경에 등록합니다.

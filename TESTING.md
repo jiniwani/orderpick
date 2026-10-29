@@ -40,3 +40,13 @@
 - 실제 모바일 320/360px에서 가로 넘침 없음. 오늘 주문·주문서·설정 이동, 설정의 카페 메뉴 바로가기, 데이터 관리 열기, 로그인 모달 열기/닫기 확인.
 - 운영 ‘지금 저장’ 버튼을 통한 추가 HTTP 쓰기 검증은 자동 승인 검토가 차단하여 실행하지 않음. 사유는 화면 전체 payload 저장과 stale 상태 덮어쓰기 위험. 실제 PostgreSQL 저장 함수의 버전 충돌·RLS·계정 분리 검증과 구분함.
 - 신규 객체 ID는 UUID 사용. Auth의 초기/로그인 중복 이벤트는 한 작업으로 합쳐 로그인 창 상태 경쟁을 방지하며 모의 검사 통과.
+
+## Cloudflare Pages 무료 정적 호스팅
+
+- 사용자가 Cloudflare에 직접 로그인한 뒤 기존 GitHub 연결로 jiniwani/orderpick을 선택. 새 OAuth 권한·유료 요금제를 추가하지 않음.
+- main, Framework None, `npm run build`, output `public`, Supabase URL/publishable key 설정. 자동 배포 활성화.
+- 커밋 `598d7f7`의 배포 성공 및 https://orderpick.pages.dev 생성 확인. 정적 파일만 사용하고 Functions는 만들지 않음.
+- 실제 HTTP 검사 PASS: 200, 3개 탭, CSP/frame-ancestors 및 nosniff, config.js no-store와 공개 설정, 최신 app.js, 새 빨강 배너 JPEG.
+- 새 주소의 360px 설정 탭 표시 및 가로 넘침 없음. Supabase Auth Site URL https://orderpick.pages.dev 저장 확인.
+- 새로운 도메인은 별도 로그인 필요. 새 주소에서 실제 비밀번호 제출/저장은 사용자 확인 항목. 기존 Vercel 주소의 관리자 자료 조회와 운영 SQL 롤백 테스트 결과는 앞 항목 참조.
+- 기존 Vercel 프로젝트와 주소는 삭제하지 않음. 운영용으로 새 Pages 주소 사용 권장.
