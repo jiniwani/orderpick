@@ -11,8 +11,8 @@ if (url) {
   }
 } else console.warn('Supabase 미연결: 화면 미리보기로 배포합니다. 주문 저장은 연결 후 사용할 수 있습니다.');
 fs.mkdirSync('public', { recursive: true });
-for (const file of ['index.html', 'app.js']) fs.copyFileSync(file, 'public/' + file);
+for (const file of ['index.html', 'app.js', '_headers']) fs.copyFileSync(file, 'public/' + file);
 fs.writeFileSync('public/config.js', 'window.ORDERPICK_CONFIG=' + JSON.stringify(url ? { url, key } : {}) + ';');
 
 fs.mkdirSync('public/assets', { recursive: true });
-fs.copyFileSync('assets/coffee-banner.jpg', 'public/assets/coffee-banner.jpg');
+fs.copyFileSync('assets/coffee-banner-red.jpg', 'public/assets/coffee-banner-red.jpg');

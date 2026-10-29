@@ -9,6 +9,6 @@ create table if not exists supabase_migrations.schema_migrations (
 );
 alter table supabase_migrations.schema_migrations enable row level security;
 insert into supabase_migrations.schema_migrations(version,name)
-values ('001','orderpick'),('002','guest_access_admin_login'),('003','fix_save_alias'),('004','safe_delete_predicates')
+values ('001','orderpick'),('002','guest_access_admin_login'),('003','fix_save_alias'),('004','safe_delete_predicates'),('005','account_isolation'),('006','account_state_grants')
 on conflict(version) do nothing;
 select version,name from supabase_migrations.schema_migrations order by version;
