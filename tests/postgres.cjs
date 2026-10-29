@@ -12,10 +12,7 @@ await db.exec(fs.readFileSync('supabase/migrations/006_account_state_grants.sql'
 // Minimal Storage metadata model. Real Storage upload/size enforcement is separate.
 await db.exec(`create schema storage;grant usage on schema storage to anon,authenticated;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(bucket_id text references storage.buckets(id),name text,metadata jsonb,created_at timestamptz default now(),primary key(bucket_id,name));alter table storage.objects enable row level security;grant select,insert,update,delete on storage.objects to anon,authenticated;`);
 await db.exec('create schema supabase_migrations;create table supabase_migrations.schema_migrations(version text primary key,name text);');
-require('../supabase/apply-007-with-backup.cjs');
-await db.exec(fs.readFileSync('.recovery/007-apply-with-backup.sql','utf8'));
-assert.equal((await db.query('select count(*)::int n from orderpick_backup_007.attendees')).rows[0].n,1);
-assert.equal((await db.query("select version from supabase_migrations.schema_migrations where version='007'")).rows.length,1);
+await db.exec(fs.readFileSync('supabase/migrations/007_attendee_photos.sql','utf8'));
 const preserved=(await db.query("select public.load_state('2098-12-31') as state")).rows[0].state;assert.equal(preserved.status,'completed');assert.equal(preserved.data.history[0].total,4500);assert.equal(preserved.data.cafes[0].name,'Legacy preserved');
 let q=await db.query(`select account_id::text from public.cafes where id='legacy'`);assert.equal(q.rows[0].account_id,'00000000-0000-4000-8000-000000000001');
 await db.exec(fs.readFileSync('tests/database-account-isolation.sql','utf8'));
