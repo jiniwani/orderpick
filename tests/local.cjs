@@ -51,3 +51,34 @@ if(JSON.parse(JSON.stringify(data)).cafes[0].menu[1].price!==null)throw Error('�
 if(!receiptAmount({total:null,knownTotal:1000,unknownCount:1}).includes('미정'))throw Error('기록 표시');
 cafe().menu[1].price=0;render();if($('heroPrice').textContent!=='1,000원'||!$('summaryPriceNote').hidden||money(0)!=='0원')throw Error('0원과 미정 혼동');
 `,sandbox);console.log('PASS: 미정/0원 구분, 미정 메뉴 등록, 혼합 주문 합계·복사·기록 표시, 가격 유효성, JSON 보존');
+vm.runInContext(`
+data.cafes=[{id:'dining_c',name:'카페',menu:[{id:'dining_m',name:'같은 음료',price:3000}]}];data.cafeId='dining_c';data.people=[{id:'dining_a',name:'A',favorites:{}},{id:'dining_b',name:'B',favorites:{}}];data.orders={};
+data.people.forEach(p=>ensure(p).on=true);ensure(data.people[0]).diningMode='dine_in';ensure(data.people[1]).diningMode='takeout';render();
+if(grouped().length!==2||selected().length!==2||$('heroPrice').textContent!=='6,000원')throw Error('이용 방법별 집계');
+if(!textOrder().includes('매장 이용')||!textOrder().includes('테이크아웃')||!$('summaryLines').innerHTML.includes('테이크아웃')||!$('personSummary').innerHTML.includes('매장 이용'))throw Error('주문서 이용 방법 누락');
+if(!$('orderPeople').innerHTML.includes('data-field="diningMode"'))throw Error('이용 방법 선택창');
+var savedDining=JSON.parse(JSON.stringify(data));if(savedDining.orders['dining_c:dining_b'].diningMode!=='takeout')throw Error('저장/백업 이용 방법 유실');
+ensure(data.people[1]).diningMode='dine_in';if(grouped().length!==1||grouped()[0].qty!==2)throw Error('동일 이용 방법 합산');
+delete ensure(data.people[0]).diningMode;delete ensure(data.people[1]).diningMode;render();if(textOrder().includes('매장 이용')||textOrder().includes('테이크아웃'))throw Error('이전 주문 이용 방법 추정');
+$('resetToday').onclick();if(data.people.length!==2||data.cafes.length!==1||selected().length)throw Error('오늘 초기화 설정 보존');
+`,sandbox);
+const diningChange=value=>{for(const fn of preferenceEvents.change||[])fn({target:{dataset:{person:'dining_a',field:'diningMode'},value,closest:()=>null},preventDefault(){},stopImmediatePropagation(){}})};
+diningChange('takeout');assert.equal(vm.runInContext("ensure(data.people[0]).diningMode",sandbox),'takeout');diningChange('invalid');assert.equal(vm.runInContext("ensure(data.people[0]).diningMode",sandbox),'takeout');
+console.log('PASS: 이용 방법 선택·변경, 같은 음료 분리/합산, 합계 유지, 주문서·개인별 내역·JSON 보존, 이전 주문 미선택, 잘못된 값 거부');
+vm.runInContext(`
+data.cafes=[{id:'inline_c',name:'카페',menu:[{id:'inline_m',name:'원래 메뉴',price:3000},{id:'inline_other',name:'다른 메뉴',price:2000}]}];data.cafeId='inline_c';data.people=[];data.orders={};ready=true;completed=false;blocked=false;render();
+beginMenuEdit(cafe().menu[0]);
+if(!$('menuList').innerHTML.includes('data-menu-form="inline_m"'))throw Error('카드 내 편집 전환');
+for(const [field,value] of [['name','수정 메뉴'],['price','미정']])$('menuList').oninput({target:{dataset:{menuId:'inline_m',menuField:field},value}});
+if(cafe().menu[0].price!==3000||cafe().menu[0].name!=='원래 메뉴')throw Error('저장 전 원본 변경');render();
+if(!$('menuList').innerHTML.includes('value="수정 메뉴"'))throw Error('재렌더링 중 입력 유실');
+$('menuList').onsubmit({preventDefault(){},target:{dataset:{menuForm:'inline_m'}}});
+if(cafe().menu[0].name!=='수정 메뉴'||cafe().menu[0].price!==null||menuEdits.size)throw Error('이름·미정 가격 저장');
+beginMenuEdit(cafe().menu[0]);menuEdits.get('inline_m').price='4,500';saveMenuEdit('inline_m');if(cafe().menu[0].price!==4500)throw Error('숫자 가격 저장');
+beginMenuEdit(cafe().menu[0]);menuEdits.get('inline_m').name='취소 이름';menuEdits.get('inline_m').price='0';cancelMenuEdit('inline_m');if(cafe().menu[0].name!=='수정 메뉴'||cafe().menu[0].price!==4500)throw Error('취소 원본 보존');
+beginMenuEdit(cafe().menu[0]);menuEdits.get('inline_m').price='-1';saveMenuEdit('inline_m');if(!menuEdits.get('inline_m').error||cafe().menu[0].price!==4500)throw Error('잘못된 가격 거부');
+menuEdits.get('inline_m').price='0';menuEdits.get('inline_m').name='다른 메뉴';saveMenuEdit('inline_m');if(!menuEdits.get('inline_m').error||cafe().menu[0].price!==4500)throw Error('중복 이름 거부');
+menuEdits.get('inline_m').name='수정 메뉴';saveMenuEdit('inline_m');if(cafe().menu[0].price!==0)throw Error('0원 저장');
+beginMenuEdit(cafe().menu[0]);menuEdits.get('inline_m').price='999';cafe().menu[0].price=500;saveMenuEdit('inline_m');if(cafe().menu[0].price!==500||!menuEdits.get('inline_m').error.includes('다른 기기'))throw Error('동시 수정 보호');cancelMenuEdit('inline_m');
+completed=true;beginMenuEdit(cafe().menu[0]);if(menuEdits.size)throw Error('완료 보호');completed=false;beginMenuEdit(cafe().menu[0]);clearAccount();if(menuEdits.size)throw Error('계정 전환 편집 내용 제거');
+`,sandbox);console.log('PASS: 메뉴 카드 직접 편집, 숫자·미정·0원 저장, 취소·입력 유지, 가격·중복·동시 수정·완료·계정 전환 보호');

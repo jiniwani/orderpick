@@ -14,11 +14,13 @@ await db.exec(`create schema storage;grant usage on schema storage to anon,authe
 await db.exec('create schema supabase_migrations;create table supabase_migrations.schema_migrations(version text primary key,name text);');
 await db.exec(fs.readFileSync('supabase/migrations/007_attendee_photos.sql','utf8'));
 await db.exec(fs.readFileSync('supabase/migrations/008_unknown_menu_price.sql','utf8'));
+await db.exec(fs.readFileSync('supabase/migrations/009_order_dining_mode.sql','utf8'));
 const preserved=(await db.query("select public.load_state('2098-12-31') as state")).rows[0].state;assert.equal(preserved.status,'completed');assert.equal(preserved.data.history[0].total,4500);assert.equal(preserved.data.cafes[0].name,'Legacy preserved');
 let q=await db.query(`select account_id::text from public.cafes where id='legacy'`);assert.equal(q.rows[0].account_id,'00000000-0000-4000-8000-000000000001');
 await db.exec(fs.readFileSync('tests/database-account-isolation.sql','utf8'));
 await db.exec(fs.readFileSync('tests/database-photos.sql','utf8'));
 await db.exec(fs.readFileSync('tests/database-unknown-price.sql','utf8'));
+await db.exec(fs.readFileSync('tests/database-dining-mode.sql','utf8'));
 q=await db.query('select count(*)::int as n from auth.users');assert.equal(q.rows[0].n,1,'Fixtures must rollback');
-console.log('PASS: PostgreSQL local migration 001–008; legacy preservation; A/B isolation, RLS, revisions, completion, resets, guest denial; private photo ownership, limits, no overwrite, reference guard and orphan cleanup; unknown/mixed/free order prices, completion and history; fixtures rolled back');
+console.log('PASS: PostgreSQL local migration 001–009; legacy preservation; A/B isolation, RLS, revisions, completion, resets, guest denial; private photo ownership, limits, no overwrite, reference guard and orphan cleanup; unknown/mixed/free order prices, completion and history; dining mode draft/items/snapshot/isolation; fixtures rolled back');
 }finally{await db.close()}})().catch(e=>{console.error(e.message,e.position,e.query?.slice(Math.max(0,Number(e.position)-80),Number(e.position)+100));process.exitCode=1});

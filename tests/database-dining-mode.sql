@@ -1,0 +1,26 @@
+begin;
+insert into auth.users values('00000000-0000-4000-8000-0000000000a9','dining-a@example.invalid'),('00000000-0000-4000-8000-0000000000b9','dining-b@example.invalid');
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-0000000000a9',true);
+set local role authenticated;
+do $$declare b jsonb:='{"cafes":[{"id":"dining_c9","name":"Cafe","menu":[{"id":"dining_m9","name":"Drink","price":3000}]}],"people":[{"id":"dining_p9","name":"A","favorites":{}},{"id":"dining_p92","name":"B","favorites":{}}],"cafeId":"dining_c9","orders":{"dining_c9:dining_p9":{"on":true,"menuId":"dining_m9","temp":"ICE","size":"기본","diningMode":"dine_in"},"dining_c9:dining_p92":{"on":true,"menuId":"dining_m9","temp":"ICE","size":"기본","diningMode":"takeout"}},"receiptText":"매장 이용 1잔 / 테이크아웃 1잔"}';s jsonb;begin
+ s:=public.save_state('2099-09-01',0,b);
+ if (select count(distinct dining_mode) from public.order_items where account_id=auth.uid())<>2 then raise exception 'DINING_ITEMS';end if;
+ s:=public.load_state('2099-09-01');if s->'data'->'orders'->'dining_c9:dining_p92'->>'diningMode'<>'takeout' then raise exception 'DRAFT_RELOAD';end if;
+ s:=public.save_state('2099-09-01',1,b,'complete');
+ if s->'data'->'orders'->'dining_c9:dining_p9'->>'diningMode'<>'dine_in' or (s->'data'->'history'->0->>'total')::int<>6000 then raise exception 'COMPLETED_DINING';end if;
+ if public.export_account()->'order_items'->0->>'dining_mode' not in ('dine_in','takeout') then raise exception 'EXPORT_DINING';end if;
+ begin perform public.save_state('2099-09-01',2,b);raise exception 'COMPLETED_EDIT';exception when others then if sqlerrm<>'ORDER_COMPLETED' then raise;end if;end;
+ b:=jsonb_set(b,'{orders,dining_c9:dining_p9,diningMode}','"invalid"');
+ begin perform public.save_state('2099-09-02',2,b);raise exception 'INVALID_MODE';exception when check_violation then null;end;
+ if public.get_revision()<>2 then raise exception 'INVALID_CHANGED_REVISION';end if;
+ b:=b#-'{orders,dining_c9:dining_p9,diningMode}';b:=b#-'{orders,dining_c9:dining_p92,diningMode}';
+ s:=public.save_state('2099-09-02',2,b);
+ if exists(select 1 from public.order_items i join public.orders o on o.id=i.order_id where o.account_id=auth.uid() and o.order_date='2099-09-02' and i.dining_mode<>'') then raise exception 'LEGACY_DEFAULT';end if;
+ if (select count(*) from public.order_items i join public.orders o on o.id=i.order_id where o.account_id=auth.uid() and o.order_date='2099-09-01' and i.dining_mode in ('dine_in','takeout'))<>2 then raise exception 'HISTORY_CHANGED';end if;
+end $$;
+reset role;
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-0000000000b9',true);
+set local role authenticated;
+do $$begin if exists(select 1 from public.order_items) then raise exception 'CROSS_ACCOUNT_DINING';end if;end $$;
+reset role;
+rollback;
